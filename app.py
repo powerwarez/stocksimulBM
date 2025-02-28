@@ -940,8 +940,9 @@ def update_user_data():
             user_data = response.data[0].get('data')
             print('update_user_data: user_data =', user_data)
             if user_data is not None:
+                reserved_keys = {"news_gen_button", "buy_confirm", "sell_confirm", "day_pass_button", "buy_cancel_button", "buy_confirm_button", "sector_news_impact", "previous_daily_news", "news_analysis_results", "ai_news_analysis_output", "daily_news", "user_data", "account", "day_count", "portfolio", "stocks"}
                 for key, value in user_data.items():
-                    if key in st.session_state:
+                    if key in reserved_keys:
                         print(f"update_user_data: skipping reserved key {key}")
                     else:
                         st.session_state[key] = value
