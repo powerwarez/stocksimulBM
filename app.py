@@ -1143,8 +1143,9 @@ def main():
             )
 
 
-if __name__ == "__main__":
-    if "account" not in st.session_state:
+if __name__ == '__main__':
+    # 로그인 상태 확인: 이미 로그인된 경우 메인 페이지로 이동
+    if 'account' in st.session_state and st.session_state['account']:
+        main()
+    else:
         login_page()
-        st.stop()
-    main()
