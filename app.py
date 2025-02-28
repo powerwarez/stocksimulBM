@@ -953,10 +953,20 @@ def update_user_data():
             print('update_user_data: No data found for account', st.session_state['account'])
 
 
+# --- 예약 키 클린업 함수 추가 ---
+def cleanup_reserved_keys():
+    reserved_keys = {"news_gen_button", "buy_confirm", "sell_confirm", "day_pass_button", "buy_cancel_button", "buy_confirm_button"}
+    for key in reserved_keys:
+        if key in st.session_state:
+            del st.session_state[key]
+            print(f"cleanup_reserved_keys: removed {key}")
+
+
 # --- 메인 화면 ---
 def main():
     update_user_data()
-    print('main: after update_user_data, st.session_state =', st.session_state)
+    cleanup_reserved_keys()
+    print('main: after update_user_data and cleanup, st.session_state =', st.session_state)
     col_news, col_main_ui = st.columns([1, 2])
 
     with col_news:
