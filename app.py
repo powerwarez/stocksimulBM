@@ -941,8 +941,11 @@ def update_user_data():
             print('update_user_data: user_data =', user_data)
             if user_data is not None:
                 for key, value in user_data.items():
-                    st.session_state[key] = value
-                    print(f"update_user_data: set {{key}} =", value)
+                    if key in st.session_state:
+                        print(f"update_user_data: skipping reserved key {key}")
+                    else:
+                        st.session_state[key] = value
+                        print(f"update_user_data: set {key} =", value)
             else:
                 print('update_user_data: user_data is None')
         else:
