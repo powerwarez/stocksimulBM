@@ -1,0 +1,6 @@
+google-generativeai
+streamlit
+streamlit-extras
+pandas
+plotly
+supabase
