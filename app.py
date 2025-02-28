@@ -930,14 +930,21 @@ def save_session_state():
 # --- DB에서 최신 user_data 정보를 불러오는 함수 추가 ---
 def update_user_data():
     if 'account' in st.session_state:
+        print('update_user_data: account found =', st.session_state['account'])
         supabase_url = os.getenv('SUPABASE_URL')
         supabase_key = os.getenv('SUPABASE_KEY')
         supabase = create_client(supabase_url, supabase_key)
         response = supabase.table('users').select('*').eq('account', st.session_state['account']).execute()
+        print('update_user_data: response =', response)
         if response.data and len(response.data) > 0:
             user_data = response.data[0].get('data')
+            print('update_user_data: user_data =', user_data)
             if user_data is not None:
                 st.session_state['user_data'] = user_data
+            else:
+                print('update_user_data: user_data is None')
+        else:
+            print('update_user_data: No data found for account', st.session_state['account'])
 
 
 # --- 메인 화면 ---
