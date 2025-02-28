@@ -7,6 +7,7 @@ import pandas as pd
 from datetime import date
 import plotly.express as px  # 그래프 라이브러리 추가
 from supabase import create_client  # supabase 라이브러리 임포트
+import json
 
 # --- Streamlit 설정 ---
 st.set_page_config(
@@ -908,8 +909,16 @@ def save_session_state():
     supabase_url = os.getenv('SUPABASE_URL')  # .env 파일에서 Supabase URL 불러오기
     supabase_key = os.getenv('SUPABASE_KEY')  # .env 파일에서 Supabase 키 불러오기
     supabase = create_client(supabase_url, supabase_key)
-    # session_state에서 저장할 데이터를 선택적으로 구성할 수 있음
-    data_to_save = { key: st.session_state[key] for key in st.session_state if key not in ['account'] }
+    # session_state에서 저장할 데이터 중 JSON 직렬화 가능한 데이터만 선별
+    data_to_save = {}
+    for key, value in st.session_state.items():
+        if key == 'account':
+            continue
+        try:
+            json.dumps(value)
+            data_to_save[key] = value
+        except (TypeError, OverflowError):
+            continue
     response = supabase.table('users').update({'data': data_to_save}).eq('account', st.session_state['account']).execute()
     if response.status_code == 200 or response.status_code == 201:
         st.info('세션 상태가 저장되었습니다.')
