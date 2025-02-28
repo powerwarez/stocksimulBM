@@ -881,18 +881,21 @@ def login_page():
         account = st.text_input('아이디')
         password = st.text_input('비밀번호', type='password')
         if st.button('로그인'):
-            supabase_url = os.getenv('SUPABASE_URL')  # .env 파일에서 Supabase URL 불러오기
-            supabase_key = os.getenv('SUPABASE_KEY')  # .env 파일에서 Supabase 키 불러오기
+            supabase_url = os.getenv('SUPABASE_URL')
+            supabase_key = os.getenv('SUPABASE_KEY')
             supabase = create_client(supabase_url, supabase_key)
             response = supabase.table('users').select('*').eq('account', account).eq('pw', password).execute()
             if response.data and len(response.data) > 0:
                 st.success('로그인 성공!')
                 user_data = response.data[0].get('data', {})
+                # 기존 user_data를 session_state에 저장하고, 저장된 설정값을 직접 적용
                 st.session_state['user_data'] = user_data
-                st.session_state['account'] = account  # 로그인한 계정 저장
+                st.session_state['account'] = account
+                for key, value in user_data.items():
+                    st.session_state[key] = value
                 try:
                     if hasattr(st, 'experimental_rerun'):
-                        st.experimental_rerun()  # 로그인 후 페이지 리로딩
+                        st.experimental_rerun()
                     else:
                         main()
                 except Exception as e:
