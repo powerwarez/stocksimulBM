@@ -871,25 +871,28 @@ def display_stock_glossary():
 
 # --- 로그인 페이지 추가 ---
 def login_page():
-    st.header('로그인')
-    account = st.text_input('아이디')
-    password = st.text_input('비밀번호', type='password')
-    if st.button('로그인'):
-        supabase_url = os.getenv('SUPABASE_URL')  # .env 파일에서 Supabase URL 불러오기
-        supabase_key = os.getenv('SUPABASE_KEY')  # .env 파일에서 Supabase 키 불러오기
-        supabase = create_client(supabase_url, supabase_key)
-        response = supabase.table('users').select('*').eq('account', account).eq('pw', password).execute()
-        if response.data and len(response.data) > 0:
-            st.success('로그인 성공!')
-            user_data = response.data[0].get('data', {})
-            st.session_state['user_data'] = user_data
-            st.session_state['account'] = account  # 로그인한 계정 저장
-            if hasattr(st, 'experimental_rerun'):
-                st.experimental_rerun()  # 로그인 후 페이지를 리로딩하여 main() 실행
+    login_container = st.empty()
+    with login_container.container():
+        st.header('로그인')
+        account = st.text_input('아이디')
+        password = st.text_input('비밀번호', type='password')
+        if st.button('로그인'):
+            supabase_url = os.getenv('SUPABASE_URL')  # .env 파일에서 Supabase URL 불러오기
+            supabase_key = os.getenv('SUPABASE_KEY')  # .env 파일에서 Supabase 키 불러오기
+            supabase = create_client(supabase_url, supabase_key)
+            response = supabase.table('users').select('*').eq('account', account).eq('pw', password).execute()
+            if response.data and len(response.data) > 0:
+                st.success('로그인 성공!')
+                user_data = response.data[0].get('data', {})
+                st.session_state['user_data'] = user_data
+                st.session_state['account'] = account  # 로그인한 계정 저장
+                login_container.empty()  # 로그인 폼 제거
+                if hasattr(st, 'experimental_rerun'):
+                    st.experimental_rerun()  # 로그인 후 페이지를 리로딩하여 main() 실행
+                else:
+                    main()
             else:
-                main()
-        else:
-            st.error('로그인 실패: 아이디 또는 비밀번호를 확인해주세요.')
+                st.error('로그인 실패: 아이디 또는 비밀번호를 확인해주세요.')
 
 
 # --- session_state를 Supabase에 저장하는 함수 ---
