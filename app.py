@@ -886,10 +886,10 @@ def login_page():
                 user_data = response.data[0].get('data', {})
                 st.session_state['user_data'] = user_data
                 st.session_state['account'] = account  # 로그인한 계정 저장
-                login_container.empty()  # 로그인 폼 제거
                 if hasattr(st, 'experimental_rerun'):
                     st.experimental_rerun()  # 로그인 후 페이지를 리로딩하여 main() 실행
                 else:
+                    login_container.empty()  # 로그인 폼 제거
                     main()
             else:
                 st.error('로그인 실패: 아이디 또는 비밀번호를 확인해주세요.')
