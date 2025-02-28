@@ -891,8 +891,6 @@ def login_page():
                 if user_data is not None:
                     st.session_state['user_data'] = user_data
                     st.session_state['account'] = account
-                    for key, value in user_data.items():
-                        st.session_state[key] = value
                 try:
                     if hasattr(st, 'experimental_rerun'):
                         st.experimental_rerun()
