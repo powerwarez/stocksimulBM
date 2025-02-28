@@ -927,8 +927,22 @@ def save_session_state():
         st.error('세션 상태 저장에 실패했습니다.')
 
 
+# --- DB에서 최신 user_data 정보를 불러오는 함수 추가 ---
+def update_user_data():
+    if 'account' in st.session_state:
+        supabase_url = os.getenv('SUPABASE_URL')
+        supabase_key = os.getenv('SUPABASE_KEY')
+        supabase = create_client(supabase_url, supabase_key)
+        response = supabase.table('users').select('*').eq('account', st.session_state['account']).execute()
+        if response.data and len(response.data) > 0:
+            user_data = response.data[0].get('data')
+            if user_data is not None:
+                st.session_state['user_data'] = user_data
+
+
 # --- 메인 화면 ---
 def main():
+    update_user_data()
     col_news, col_main_ui = st.columns([1, 2])
 
     with col_news:
