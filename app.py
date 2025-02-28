@@ -871,6 +871,9 @@ def display_stock_glossary():
 
 # --- 로그인 페이지 추가 ---
 def login_page():
+    if 'account' in st.session_state:
+        main()
+        return
     login_container = st.empty()
     with login_container.container():
         st.header('로그인')
