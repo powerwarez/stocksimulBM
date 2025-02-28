@@ -940,7 +940,9 @@ def update_user_data():
             user_data = response.data[0].get('data')
             print('update_user_data: user_data =', user_data)
             if user_data is not None:
-                st.session_state['user_data'] = user_data
+                for key, value in user_data.items():
+                    st.session_state[key] = value
+                    print(f"update_user_data: set {{key}} =", value)
             else:
                 print('update_user_data: user_data is None')
         else:
@@ -950,6 +952,7 @@ def update_user_data():
 # --- 메인 화면 ---
 def main():
     update_user_data()
+    print('main: after update_user_data, st.session_state =', st.session_state)
     col_news, col_main_ui = st.columns([1, 2])
 
     with col_news:
