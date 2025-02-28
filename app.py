@@ -887,10 +887,12 @@ def login_page():
             response = supabase.table('users').select('*').eq('account', account).eq('pw', password).execute()
             if response.data and len(response.data) > 0:
                 st.success('로그인 성공!')
-                user_data = response.data[0].get('data')
-                if user_data is not None:
-                    st.session_state['user_data'] = user_data
-                    st.session_state['account'] = account
+                # user_data가 아직 session_state에 없다면 추가
+                if 'user_data' not in st.session_state:
+                    user_data = response.data[0].get('data')
+                    if user_data is not None:
+                        st.session_state['user_data'] = user_data
+                        st.session_state['account'] = account
                 try:
                     if hasattr(st, 'experimental_rerun'):
                         st.experimental_rerun()
