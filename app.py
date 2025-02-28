@@ -920,7 +920,7 @@ def save_session_state():
         except (TypeError, OverflowError):
             continue
     response = supabase.table('users').update({'data': data_to_save}).eq('account', st.session_state['account']).execute()
-    if response.status_code == 200 or response.status_code == 201:
+    if getattr(response, 'status_code', None) in [200, 201]:
         st.info('세션 상태가 저장되었습니다.')
     else:
         st.error('세션 상태 저장에 실패했습니다.')
