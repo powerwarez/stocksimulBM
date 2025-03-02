@@ -893,6 +893,7 @@ def login_page():
                 st.session_state['user_data'] = user_data
             st.session_state['account'] = account
             cleanup_reserved_keys()
+            # 페이지 새로고침 시도
             try:
                 if hasattr(st, 'experimental_rerun') and callable(getattr(st, 'experimental_rerun')):
                     st.experimental_rerun()
@@ -916,16 +917,24 @@ def save_session_state():
     supabase_url = os.getenv('SUPABASE_URL')  # .env 파일에서 Supabase URL 불러오기
     supabase_key = os.getenv('SUPABASE_KEY')  # .env 파일에서 Supabase 키 불러오기
     supabase = create_client(supabase_url, supabase_key)
-    # session_state에서 저장할 데이터 중 JSON 직렬화 가능한 데이터만 선별
+    
+    # 중요 게임 상태 변수들만 저장
+    critical_keys = [
+        'day_count', 'cash', 'portfolio', 'stock_prices', 
+        'daily_news', 'previous_daily_news', 'news_meanings'
+    ]
+    
+    # 중요 키들만 저장
     data_to_save = {}
-    for key, value in st.session_state.items():
-        if key == 'account':
-            continue
-        try:
-            json.dumps(value)
-            data_to_save[key] = value
-        except (TypeError, OverflowError):
-            continue
+    for key in critical_keys:
+        if key in st.session_state:
+            try:
+                json.dumps(st.session_state[key])
+                data_to_save[key] = st.session_state[key]
+                print(f"save_session_state: saving critical key {key}")
+            except (TypeError, OverflowError):
+                print(f"save_session_state: failed to serialize critical key {key}")
+    
     response = supabase.table('users').update({'data': data_to_save}).eq('account', st.session_state['account']).execute()
     if not getattr(response, 'error', None):
         st.info('세션 상태가 저장되었습니다.')
@@ -946,11 +955,24 @@ def update_user_data():
             user_data = response.data[0].get('data')
             print('update_user_data: user_data =', user_data)
             if user_data is not None:
-                reserved_keys = {"news_gen_button", "buy_confirm", "sell_confirm", "day_pass_button", "buy_cancel_button", "buy_confirm_button"}
+                # 중요 게임 상태 변수들을 우선적으로 불러옴
+                critical_keys = [
+                    'day_count', 'cash', 'portfolio', 'stock_prices', 
+                    'daily_news', 'previous_daily_news', 'news_meanings'
+                ]
+                
+                # 중요 키들 먼저 처리
+                for key in critical_keys:
+                    if key in user_data:
+                        st.session_state[key] = user_data[key]
+                        print(f"update_user_data: set critical key {key} =", user_data[key])
+                
+                # 나머지 키들 처리
+                reserved_keys = {"news_gen_button", "buy_confirm", "sell_confirm", "day_pass_button", "buy_cancel_button", "buy_confirm_button", "main_has_run"}
                 for key, value in user_data.items():
                     if key in reserved_keys:
                         print(f"update_user_data: skipping reserved key {key}")
-                    else:
+                    elif key not in critical_keys:  # 이미 처리한 중요 키는 건너뜀
                         st.session_state[key] = value
                         print(f"update_user_data: set {key} =", value)
             else:
@@ -968,8 +990,57 @@ def cleanup_reserved_keys():
             print(f"cleanup_reserved_keys: removed {key}")
 
 
+# --- 세션 상태 초기화 함수 추가 ---
+def initialize_session_state():
+    # 기본값 설정
+    default_values = {
+        'day_count': 1,
+        'cash': 10000000,  # 1천만원 초기 자금
+        'portfolio': {},
+        'stock_prices': {},
+        'daily_news': [],
+        'previous_daily_news': [],
+        'news_meanings': {},
+        'main_has_run': False
+    }
+    
+    # 로그인된 계정이 있는 경우 DB에서 데이터 가져오기
+    if 'account' in st.session_state:
+        try:
+            supabase_url = os.getenv('SUPABASE_URL')
+            supabase_key = os.getenv('SUPABASE_KEY')
+            supabase = create_client(supabase_url, supabase_key)
+            response = supabase.table('users').select('*').eq('account', st.session_state['account']).execute()
+            
+            if response.data and len(response.data) > 0:
+                user_data = response.data[0].get('data')
+                if user_data is not None:
+                    # DB에서 가져온 데이터로 세션 상태 업데이트
+                    for key, value in default_values.items():
+                        if key in user_data:
+                            st.session_state[key] = user_data[key]
+                        elif key not in st.session_state:
+                            st.session_state[key] = value
+                    return
+        except Exception as e:
+            print(f"DB에서 데이터 가져오기 실패: {e}")
+    
+    # DB에서 데이터를 가져오지 못했거나 로그인되지 않은 경우 기본값으로 초기화
+    for key, value in default_values.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
+
+
 # --- 메인 화면 ---
 def main():
+    # 로그인 확인
+    if 'account' not in st.session_state:
+        login_page()
+        return
+    
+    # 여기서부터 메인 페이지 내용
+    st.title('📈 초등학생을 위한 모의 주식 게임')
+    
     if st.session_state.get('main_has_run', False):
         return
     st.session_state['main_has_run'] = True
@@ -1209,8 +1280,13 @@ def main():
 
 
 if __name__ == '__main__':
-    # 로그인 상태 확인: 이미 로그인된 경우 메인 페이지로 이동
-    if 'account' in st.session_state and st.session_state['account']:
-        main()
+    # 세션 상태 초기화
+    if 'initialized' not in st.session_state:
+        initialize_session_state()
+        st.session_state['initialized'] = True
+    
+    # 로그인 상태 확인
+    if 'account' in st.session_state:
+        main()  # 로그인 되어 있으면 메인 페이지 표시
     else:
-        login_page()
+        login_page()  # 로그인 안 되어 있으면 로그인 페이지 표시
