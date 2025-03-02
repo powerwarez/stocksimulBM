@@ -1134,7 +1134,7 @@ def main():
                 with col_confirm:
                     if st.button("✅ 매수 확인", use_container_width=True, key='buy_confirm_button'):
                         buy_stock(selected_stock_buy, quantity_buy, selected_sector_buy)
-                        save_session_state()
+                        # buy_stock 함수 내에서 save_session_state()와 st.experimental_rerun()을 호출하므로 여기서는 제거
 
                 with col_cancel:
                     if st.button("❌ 매수 취소", use_container_width=True, key='buy_cancel_button', type='secondary'):
@@ -1173,7 +1173,7 @@ def main():
                     with col_confirm:
                         if st.button("✅ 매도 확인", use_container_width=True, key='sell_confirm_button'):
                             sell_stock(selected_stock_sell, quantity_sell)
-                            save_session_state()
+                            # sell_stock 함수 내에서 save_session_state()와 st.experimental_rerun()을 호출하므로 여기서는 제거
                     with col_cancel:
                         if st.button("❌ 매도 취소", use_container_width=True, key='sell_cancel_button', type='secondary'):
                             st.session_state['sell_confirm'] = False
