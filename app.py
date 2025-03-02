@@ -964,9 +964,9 @@ def cleanup_reserved_keys():
 
 # --- 메인 화면 ---
 def main():
-    update_user_data()
     cleanup_reserved_keys()
-    print('main: after update_user_data and cleanup, st.session_state =', st.session_state)
+    update_user_data()
+    print('main: after cleanup and update, st.session_state =', st.session_state)
     col_news, col_main_ui = st.columns([1, 2])
 
     with col_news:
