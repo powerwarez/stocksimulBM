@@ -4,3 +4,4 @@ streamlit-extras
 pandas
 plotly
 supabase
+streamlit_modal
