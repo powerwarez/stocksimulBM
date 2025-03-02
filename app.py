@@ -872,6 +872,7 @@ def display_stock_glossary():
 
 # --- 로그인 페이지 추가 ---
 def login_page():
+    cleanup_reserved_keys()
     if 'account' in st.session_state:
         main()
         return
@@ -892,13 +893,7 @@ def login_page():
                     st.session_state['user_data'] = user_data
                     st.session_state['account'] = account
                 cleanup_reserved_keys()
-                try:
-                    if hasattr(st, 'experimental_rerun'):
-                        st.experimental_rerun()
-                    else:
-                        main()
-                except Exception as e:
-                    main()
+                st.experimental_rerun()
             else:
                 st.error('로그인 실패: 아이디 또는 비밀번호를 확인해주세요.')
 
@@ -965,6 +960,9 @@ def cleanup_reserved_keys():
 
 # --- 메인 화면 ---
 def main():
+    if st.session_state.get('main_has_run', False):
+        return
+    st.session_state['main_has_run'] = True
     update_user_data()
     cleanup_reserved_keys()
     print('main: after update and cleanup, st.session_state =', st.session_state)
