@@ -878,39 +878,34 @@ def login_page():
         main()
         return
 
-    login_container = st.empty()
-    with login_container.container():
-        st.header('로그인')
-        account = st.text_input('아이디')
-        password = st.text_input('비밀번호', type='password')
-        if st.button('로그인'):
-            supabase_url = os.getenv('SUPABASE_URL')
-            supabase_key = os.getenv('SUPABASE_KEY')
-            supabase = create_client(supabase_url, supabase_key)
-            response = supabase.table('users').select('*').eq('account', account).execute()
-            if response.data and len(response.data) > 0 and response.data[0].get('pw') == password:
-                st.success('로그인 성공!')
-                user_data = response.data[0].get('data')
-                if user_data is not None:
-                    st.session_state['user_data'] = user_data
-                st.session_state['account'] = account
-                cleanup_reserved_keys()
-                # 로그인 UI 제거
-                login_container.empty()
-                # experimental_rerun 사용 시도
-                try:
-                    if hasattr(st, 'experimental_rerun') and callable(getattr(st, 'experimental_rerun')):
-                        st.experimental_rerun()
-                    else:
-                        main()
-                        st.stop()
-                except Exception as e:
-                    st.error(f'재시작 오류 발생: {e}')
+    st.header('로그인')
+    account = st.text_input('아이디')
+    password = st.text_input('비밀번호', type='password')
+    if st.button('로그인'):
+        supabase_url = os.getenv('SUPABASE_URL')
+        supabase_key = os.getenv('SUPABASE_KEY')
+        supabase = create_client(supabase_url, supabase_key)
+        response = supabase.table('users').select('*').eq('account', account).execute()
+        if response.data and len(response.data) > 0 and response.data[0].get('pw') == password:
+            st.success('로그인 성공!')
+            user_data = response.data[0].get('data')
+            if user_data is not None:
+                st.session_state['user_data'] = user_data
+            st.session_state['account'] = account
+            cleanup_reserved_keys()
+            try:
+                if hasattr(st, 'experimental_rerun') and callable(getattr(st, 'experimental_rerun')):
+                    st.experimental_rerun()
+                else:
                     main()
                     st.stop()
-                return
-            else:
-                st.error('로그인 실패: 아이디 또는 비밀번호를 확인해주세요.')
+            except Exception as e:
+                st.error(f'재시작 오류 발생: {e}')
+                main()
+                st.stop()
+            return
+        else:
+            st.error('로그인 실패: 아이디 또는 비밀번호를 확인해주세요.')
 
 
 # --- session_state를 Supabase에 저장하는 함수 ---
