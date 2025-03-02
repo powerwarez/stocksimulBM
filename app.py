@@ -891,6 +891,7 @@ def login_page():
                 if user_data is not None:
                     st.session_state['user_data'] = user_data
                     st.session_state['account'] = account
+                cleanup_reserved_keys()
                 try:
                     if hasattr(st, 'experimental_rerun'):
                         st.experimental_rerun()
@@ -964,9 +965,9 @@ def cleanup_reserved_keys():
 
 # --- 메인 화면 ---
 def main():
-    cleanup_reserved_keys()
     update_user_data()
-    print('main: after cleanup and update, st.session_state =', st.session_state)
+    cleanup_reserved_keys()
+    print('main: after update and cleanup, st.session_state =', st.session_state)
     col_news, col_main_ui = st.columns([1, 2])
 
     with col_news:
