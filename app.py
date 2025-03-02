@@ -1044,7 +1044,7 @@ def main():
             )
 
             if not st.session_state.get('buy_confirm', False):
-                if st.button("주식 매수", use_container_width=True, key='buy_button_confirm'):
+                if st.button("주식 매수", use_container_width=True, key='buy_stock_button'):
                     st.session_state['buy_confirm'] = True
             else:
                 st.warning("정말 매수하시겠습니까?")
