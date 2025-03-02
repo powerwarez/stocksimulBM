@@ -567,6 +567,10 @@ def buy_stock(stock_name, quantity, sector):
             f"{stock_name} {quantity}주 매수 완료. 총 {total_price:,.0f}원 소요.", icon="✅"
         )
         st.session_state['buy_confirm'] = False
+        # 주식 매수 후 세션 상태 저장
+        save_session_state()
+        # 페이지 새로고침
+        st.experimental_rerun()
     else:
         st.session_state["messages"].append(
             {"type": "error", "text": "잔액이 부족합니다."}
@@ -634,6 +638,10 @@ def sell_stock(stock_name, quantity):
     )
     st.success(f"{stock_name} {quantity}주 매도 완료. 총 {sell_price:,.0f}원 획득.")
     st.session_state['sell_confirm'] = False
+    # 주식 매도 후 세션 상태 저장
+    save_session_state()
+    # 페이지 새로고침
+    st.experimental_rerun()
 
 
 def update_stock_prices():
