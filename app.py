@@ -872,25 +872,36 @@ def display_stock_glossary():
 
 # --- 로그인 페이지 추가 ---
 def login_page():
-    # If already logged in, skip login UI and proceed to main page
+    cleanup_reserved_keys()
+    # 이미 로그인 되어 있으면 메인 화면 호출
     if st.session_state.get('account'):
         main()
         return
-    # 기존 로그인 UI 코드 시작
-    st.title('로그인')
-    account = st.text_input('계정을 입력하세요')
-    password = st.text_input('비밀번호를 입력하세요', type='password')
-    if st.button('로그인'):
-        # 로그인 검증 로직
-        if account and password:  # 실제 인증 로직으로 대체하세요.
-            st.session_state['account'] = account
-            st.success('로그인 성공')
-            main()
-            return
-        else:
-            st.error('로그인 실패: 계정 또는 비밀번호를 확인하세요.')
-    
-    # ... existing code after login UI ...
+
+    login_container = st.empty()
+    with login_container.container():
+        st.header('로그인')
+        account = st.text_input('아이디')
+        password = st.text_input('비밀번호', type='password')
+        if st.button('로그인'):
+            supabase_url = os.getenv('SUPABASE_URL')
+            supabase_key = os.getenv('SUPABASE_KEY')
+            supabase = create_client(supabase_url, supabase_key)
+            response = supabase.table('users').select('*').eq('account', account).execute()
+            if response.data and len(response.data) > 0 and response.data[0].get('pw') == password:
+                st.success('로그인 성공!')
+                user_data = response.data[0].get('data')
+                if user_data is not None:
+                    st.session_state['user_data'] = user_data
+                st.session_state['account'] = account
+                cleanup_reserved_keys()
+                # 로그인 UI 제거
+                login_container.empty()
+                # 메인 페이지로 전환
+                main()
+                return
+            else:
+                st.error('로그인 실패: 아이디 또는 비밀번호를 확인해주세요.')
 
 
 # --- session_state를 Supabase에 저장하는 함수 ---
