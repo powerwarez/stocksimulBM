@@ -1287,6 +1287,16 @@ def main():
             )
 
 
+# 공통 데이터베이스 업데이트 및 페이지 리프레쉬 함수 추가
+def process_db_update(update_action):
+    try:
+        update_action()
+        save_session_state()
+        st.experimental_rerun()
+    except Exception as e:
+        st.error(f"업데이트 중 오류 발생: {e}")
+
+
 if __name__ == '__main__':
     # 세션 상태 초기화
     if 'initialized' not in st.session_state:
