@@ -895,8 +895,19 @@ def login_page():
                     st.session_state['user_data'] = user_data
                 st.session_state['account'] = account
                 cleanup_reserved_keys()
-                # 기존 login_container.empty()와 main() 호출 대신 st.experimental_rerun() 호출
-                st.experimental_rerun()
+                # 로그인 UI 제거
+                login_container.empty()
+                # experimental_rerun 사용 시도
+                try:
+                    if hasattr(st, 'experimental_rerun') and callable(getattr(st, 'experimental_rerun')):
+                        st.experimental_rerun()
+                    else:
+                        main()
+                        st.stop()
+                except Exception as e:
+                    st.error(f'재시작 오류 발생: {e}')
+                    main()
+                    st.stop()
                 return
             else:
                 st.error('로그인 실패: 아이디 또는 비밀번호를 확인해주세요.')
