@@ -893,7 +893,14 @@ def login_page():
                     st.session_state['user_data'] = user_data
                     st.session_state['account'] = account
                 cleanup_reserved_keys()
-                st.experimental_rerun()
+                try:
+                    func = getattr(st, 'experimental_rerun', None)
+                    if callable(func):
+                        func()
+                    else:
+                        main()
+                except AttributeError:
+                    main()
             else:
                 st.error('로그인 실패: 아이디 또는 비밀번호를 확인해주세요.')
 
