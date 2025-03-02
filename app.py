@@ -895,10 +895,8 @@ def login_page():
                     st.session_state['user_data'] = user_data
                 st.session_state['account'] = account
                 cleanup_reserved_keys()
-                # 로그인 UI 제거
-                login_container.empty()
-                # 메인 페이지로 전환
-                main()
+                # 기존 login_container.empty()와 main() 호출 대신 st.experimental_rerun() 호출
+                st.experimental_rerun()
                 return
             else:
                 st.error('로그인 실패: 아이디 또는 비밀번호를 확인해주세요.')
