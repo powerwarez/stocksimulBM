@@ -7,6 +7,7 @@ import pandas as pd
 from datetime import date
 import plotly.express as px  # 그래프 라이브러리 추가
 from supabase import create_client  # supabase 라이브러리 임포트
+from streamlit_modal import Modal
 
 # --- Streamlit 설정 ---
 st.set_page_config(
@@ -871,33 +872,42 @@ def display_stock_glossary():
 
 # --- 로그인 페이지 추가 ---
 def login_page():
+    import os
     import streamlit as st
-    # Import 모달 기능을 제공하는 서드파티 라이브러리 사용. (pip install streamlit-modal 필요)
     from streamlit_modal import Modal
+    from supabase import create_client
     
-    # 모달 창 생성
-    modal = Modal("로그인", key="login_modal")
-    with modal.container():
-        st.title("로그인")
-        account_input = st.text_input("아이디", key="login_account")
-        password_input = st.text_input("비밀번호", type="password", key="login_pw")
-        
-        if st.button("로그인", key="login_button"):
-            try:
-                # supabase의 users 테이블에서 account와 pw 컬럼을 조회
-                response = supabase.table("users").select("account", "pw").eq("account", account_input).execute()
-                
-                if response.data and response.data[0]["pw"] == password_input:
-                    st.session_state["account"] = account_input
-                    modal.close()
-                    st.success("로그인 성공!")
-                    st.experimental_rerun()
-                else:
-                    st.error("아이디 또는 비밀번호가 틀렸습니다.")
-            except Exception as e:
-                st.error(f"로그인 중 오류 발생: {e}")
+    # Supabase 클라이언트 초기화 (환경변수 SUPABASE_URL, SUPABASE_KEY 필요)
+    supabase_url = os.getenv('SUPABASE_URL')
+    supabase_key = os.getenv('SUPABASE_KEY')
+    supabase = create_client(supabase_url, supabase_key)
     
-    # 모달이 닫히지 않은 상태이면 실행을 중단하여 메인페이지가 표시되지 않도록 함
+    # account가 없으면 모달 열기
+    if "account" not in st.session_state:
+        modal = Modal("로그인", key="login_modal")
+        modal.open()
+        with modal.container():
+            st.title("로그인")
+            account_input = st.text_input("아이디", key="login_account")
+            password_input = st.text_input("비밀번호", type="password", key="login_pw")
+            
+            if st.button("로그인", key="login_button"):
+                try:
+                    response = supabase.table("users")\
+                        .select("account", "pw")\
+                        .eq("account", account_input)\
+                        .execute()
+                    if response.data and response.data[0]["pw"] == password_input:
+                        st.session_state["account"] = account_input
+                        modal.close()
+                        st.success("로그인 성공!")
+                        st.experimental_rerun()
+                    else:
+                        st.error("아이디 또는 비밀번호가 틀렸습니다.")
+                except Exception as e:
+                    st.error(f"로그인 중 오류 발생: {e}")
+    
+    # account가 없는 경우, 모달이 닫히지 않으면 메인페이지 차단
     if "account" not in st.session_state:
         st.stop()
 
