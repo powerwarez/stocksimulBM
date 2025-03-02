@@ -1043,7 +1043,7 @@ def main():
                 "매수 수량 (주):", min_value=1, value=1, step=1
             )
 
-            if not st.session_state['buy_confirm']:
+            if not st.session_state.get('buy_confirm', False):
                 if st.button("주식 매수", use_container_width=True, key='buy_button_confirm'):
                     st.session_state['buy_confirm'] = True
             else:
