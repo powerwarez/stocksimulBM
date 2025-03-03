@@ -1051,6 +1051,7 @@ def main():
                     st.session_state["day_count"] += 1
                     st.rerun()
                     st.info("어제 뉴스 해설 탭에서 AI가 분석한 뉴스 해설을 확인해보세요.")
+                    save_session_data()
             else:
                 st.warning("오늘의 뉴스를 먼저 생성해주세요.")
         st.markdown("***")
