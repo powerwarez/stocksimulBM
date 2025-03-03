@@ -6,7 +6,7 @@ import time
 import pandas as pd
 from datetime import date
 import plotly.express as px  # 그래프 라이브러리 추가
-from supabase import create_client  # supabase 라이브러리 임포트
+from supabase import create_client, Client  # supabase 클라이언트 사용
 import json
 
 # --- Streamlit 설정 ---
@@ -1296,6 +1296,28 @@ def process_db_update(update_action):
     except Exception as e:
         st.error(f"업데이트 중 오류 발생: {e}")
 
+
+# 환경변수에서 Supabase URL과 API KEY 불러오기
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+# Supabase 클라이언트 생성
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# 사이드바에 Supabase 데이터 불러오기 기능 추가
+with st.sidebar:
+    st.header("Supabase 데이터 불러오기")  # 사이드바 제목
+    account = st.text_input("Account")  # 계정 입력
+    pw = st.text_input("Password", type="password")  # 비밀번호 입력
+
+    if st.button("데이터 불러오기"):
+        # users 테이블에서 account와 pw에 해당하는 데이터 조회
+        response = supabase.table("users").select("data").eq("account", account).eq("pw", pw).execute()
+        if response.data and len(response.data) > 0:
+            st.success("데이터를 성공적으로 불러왔습니다!")
+            st.write(response.data)
+        else:
+            st.error("일치하는 계정 정보가 없습니다.")
 
 if __name__ == '__main__':
     # 세션 상태 초기화
