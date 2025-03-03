@@ -6,8 +6,8 @@ import time
 import pandas as pd
 from datetime import date
 import plotly.express as px  # 그래프 라이브러리 추가
-from supabase import create_client, Client  # supabase 클라이언트 사용
 import json
+from supabase import create_client, Client
 
 # --- Streamlit 설정 ---
 st.set_page_config(
@@ -567,10 +567,6 @@ def buy_stock(stock_name, quantity, sector):
             f"{stock_name} {quantity}주 매수 완료. 총 {total_price:,.0f}원 소요.", icon="✅"
         )
         st.session_state['buy_confirm'] = False
-        # 주식 매수 후 세션 상태 저장
-        save_session_state()
-        # 페이지 새로고침
-        st.experimental_rerun()
     else:
         st.session_state["messages"].append(
             {"type": "error", "text": "잔액이 부족합니다."}
@@ -638,10 +634,6 @@ def sell_stock(stock_name, quantity):
     )
     st.success(f"{stock_name} {quantity}주 매도 완료. 총 {sell_price:,.0f}원 획득.")
     st.session_state['sell_confirm'] = False
-    # 주식 매도 후 세션 상태 저장
-    save_session_state()
-    # 페이지 새로고침
-    st.experimental_rerun()
 
 
 def update_stock_prices():
@@ -878,57 +870,8 @@ def display_stock_glossary():
         st.markdown("---")
 
 
-# --- 세션 상태 초기화 함수 추가 ---
-def initialize_session_state():
-    # 기본값 설정
-    default_values = {
-        'day_count': 1,
-        'cash': 10000000,  # 1천만원 초기 자금
-        'portfolio': {},
-        'stock_prices': {},
-        'daily_news': [],
-        'previous_daily_news': [],
-        'news_meanings': {},
-        'main_has_run': False
-    }
-    
-    # 로그인된 계정이 있는 경우 DB에서 데이터 가져오기
-    if 'account' in st.session_state:
-        try:
-            supabase_url = os.getenv('SUPABASE_URL')
-            supabase_key = os.getenv('SUPABASE_KEY')
-            supabase = create_client(supabase_url, supabase_key)
-            response = supabase.table('users').select('*').eq('account', st.session_state['account']).execute()
-            
-            if response.data and len(response.data) > 0:
-                user_data = response.data[0].get('data')
-                if user_data is not None:
-                    # DB에서 가져온 데이터로 세션 상태 업데이트
-                    for key, value in default_values.items():
-                        if key in user_data:
-                            st.session_state[key] = user_data[key]
-                        elif key not in st.session_state:
-                            st.session_state[key] = value
-                    return
-        except Exception as e:
-            print(f"DB에서 데이터 가져오기 실패: {e}")
-    
-    # DB에서 데이터를 가져오지 못했거나 로그인되지 않은 경우 기본값으로 초기화
-    for key, value in default_values.items():
-        if key not in st.session_state:
-            st.session_state[key] = value
-
-
 # --- 메인 화면 ---
 def main():
-    
-    # 여기서부터 메인 페이지 내용
-    st.title('📈 초등학생을 위한 모의 주식 게임')
-    
-    if st.session_state.get('main_has_run', False):
-        return
-    st.session_state['main_has_run'] = True
-    print('main: after update and cleanup, st.session_state =', st.session_state)
     col_news, col_main_ui = st.columns([1, 2])
 
     with col_news:
@@ -937,8 +880,6 @@ def main():
             with st.spinner(f"Day {st.session_state['day_count']} 뉴스 생성 중..."):
                 current_daily_news = generate_news()
                 st.session_state["daily_news"] = current_daily_news
-            # 뉴스 생성이 완료되면 session_state 저장
-
 
         if st.session_state["daily_news"]:
             st.subheader(f"Day {st.session_state['day_count']} 뉴스")
@@ -999,8 +940,8 @@ def main():
                 "매수 수량 (주):", min_value=1, value=1, step=1
             )
 
-            if not st.session_state.get('buy_confirm', False):
-                if st.button("주식 매수", use_container_width=True, key='buy_stock_button'):
+            if not st.session_state['buy_confirm']:
+                if st.button("주식 매수", use_container_width=True, key='buy_button_confirm'):
                     st.session_state['buy_confirm'] = True
             else:
                 st.warning("정말 매수하시겠습니까?")
@@ -1008,7 +949,6 @@ def main():
                 with col_confirm:
                     if st.button("✅ 매수 확인", use_container_width=True, key='buy_confirm_button'):
                         buy_stock(selected_stock_buy, quantity_buy, selected_sector_buy)
-                        # buy_stock 함수 내에서 save_session_state()와 st.experimental_rerun()을 호출하므로 여기서는 제거
 
                 with col_cancel:
                     if st.button("❌ 매수 취소", use_container_width=True, key='buy_cancel_button', type='secondary'):
@@ -1047,7 +987,6 @@ def main():
                     with col_confirm:
                         if st.button("✅ 매도 확인", use_container_width=True, key='sell_confirm_button'):
                             sell_stock(selected_stock_sell, quantity_sell)
-                            # sell_stock 함수 내에서 save_session_state()와 st.experimental_rerun()을 호출하므로 여기서는 제거
                     with col_cancel:
                         if st.button("❌ 매도 취소", use_container_width=True, key='sell_cancel_button', type='secondary'):
                             st.session_state['sell_confirm'] = False
@@ -1161,43 +1100,40 @@ def main():
             )
 
 
-# 공통 데이터베이스 업데이트 및 페이지 리프레쉬 함수 추가
-def process_db_update(update_action):
-    try:
-        update_action()
-
-        st.experimental_rerun()
-    except Exception as e:
-        st.error(f"업데이트 중 오류 발생: {e}")
-
-
-# 환경변수에서 Supabase URL과 API KEY 불러오기
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
-# Supabase 클라이언트 생성
+# supabase 클라이언트를 초기화합니다.
+SUPABASE_URL = os.environ.get("SUPABASE_URL")  # .env 파일에서 Supabase URL을 불러옵니다.
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")    # .env 파일에서 Supabase API KEY를 불러옵니다.
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# 사이드바에 Supabase 데이터 불러오기 기능 추가
-with st.sidebar:
-    st.header("Supabase 데이터 불러오기")  # 사이드바 제목
-    account = st.text_input("Account")  # 계정 입력
-    pw = st.text_input("Password", type="password")  # 비밀번호 입력
+def login_sidebar():
+    # 사이드바에 로그인 폼을 생성하는 함수입니다.
+    st.sidebar.header("로그인")
+    account = st.sidebar.text_input("계정", value="")  # 사용자에게 계정을 입력받습니다.
+    pw = st.sidebar.text_input("비밀번호", type="password")  # 사용자에게 비밀번호를 입력받습니다.
 
-    if st.button("데이터 불러오기"):
-        # users 테이블에서 account와 pw에 해당하는 데이터 조회
-        response = supabase.table("users").select("data").eq("account", account).eq("pw", pw).execute()
+    # 로그인 버튼 클릭 시
+    if st.sidebar.button("로그인"):
+        # supabase의 users 테이블에서 account와 pw를 기준으로 사용자 조회
+        response = supabase.table("users").select("*").eq("account", account).eq("pw", pw).execute()
         if response.data and len(response.data) > 0:
-            st.success("데이터를 성공적으로 불러왔습니다!")
-            st.write(response.data)
+            user_data = response.data[0]
+            # 조회된 user_data에 JSON 형식의 data 컬럼이 있는지 확인합니다.
+            if "data" in user_data and user_data["data"]:
+                try:
+                    user_settings = json.loads(user_data["data"])
+                except Exception as e:
+                    st.sidebar.error("데이터 JSON 파싱 중 오류 발생, 기본 설정을 사용합니다.")
+                    user_settings = {"default_setting": True}  # 기본 설정 예시
+            else:
+                # 데이터가 없으면 기본 설정을 사용합니다.
+                user_settings = {"default_setting": True}
+            st.sidebar.success("로그인 성공!")
+            st.session_state["user_settings"] = user_settings
         else:
-            st.error("일치하는 계정 정보가 없습니다.")
+            st.sidebar.error("아이디 또는 비밀번호가 일치하지 않습니다.")
 
-if __name__ == '__main__':
-    # 세션 상태 초기화
-    if 'initialized' not in st.session_state:
-        initialize_session_state()
-        st.session_state['initialized'] = True
-    
-    # 항상 메인 페이지 표시 (로그인 페이지를 제거함)
-    main()  # 로그인 여부와 상관없이 메인 페이지를 표시
+# main 함수 전에 sidebar 로그인을 호출합니다.
+login_sidebar()
+
+if __name__ == "__main__":
+    main()
