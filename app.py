@@ -880,37 +880,37 @@ def main():
             with st.spinner(f"Day {st.session_state['day_count']} 뉴스 생성 중..."):
                 current_daily_news = generate_news()
                 st.session_state["daily_news"] = current_daily_news
+                # 뉴스 생성 후 session 데이터를 DB에 저장합니다.
+                save_session_data()
 
-        if st.session_state["daily_news"]:
+        if st.session_state.get("daily_news"):
             st.subheader(f"Day {st.session_state['day_count']} 뉴스")
             for i, news in enumerate(st.session_state["daily_news"]):
                 with st.expander(f"뉴스 {i+1}", expanded=False):
                     st.write(news)
 
-        if st.session_state["previous_daily_news"] and st.session_state[
-            "news_meanings"
-        ]:
+        if st.session_state.get("previous_daily_news") and st.session_state.get("news_meanings"):
             st.subheader(f"Day {st.session_state['day_count'] - 1} 뉴스 해설")
             st.info("AI가 분석한 어제 뉴스 해설입니다.")
             with st.expander(f"Day {st.session_state['day_count'] - 1} 뉴스 해설 보기", expanded=False):
-                if st.session_state["news_meanings"]:
+                if st.session_state.get("news_meanings"):
                     for i, meaning_data in st.session_state["news_meanings"].items():
                         st.markdown(f"**뉴스 {i}**:")
-                        st.markdown(f"**AI 해설:** {meaning_data['explanation']}") # Markdown 으로 변경
+                        st.markdown(f"**AI 해설:** {meaning_data['explanation']}")
                         if meaning_data['sectors']:
-                            st.markdown(f"**관련 섹터:** {', '.join(meaning_data['sectors'])}") # Markdown 으로 변경
+                            st.markdown(f"**관련 섹터:** {', '.join(meaning_data['sectors'])}")
                         else:
-                            st.markdown("**관련 섹터:** 없음") # Markdown 으로 변경
+                            st.markdown("**관련 섹터:** 없음")
                 else:
                     st.info("어제 뉴스에 대한 해설이 없습니다.")
 
-        elif not st.session_state["daily_news"]:
+        elif not st.session_state.get("daily_news"):
             st.info("뉴스 생성 버튼을 눌러 오늘의 뉴스를 받아보세요.")
 
     with col_main_ui:
-        menu = st.tabs(
-            ['현재 주가', '내 포트폴리오', '주식 매수', '주식 매도', '어제 뉴스 해설']
-        )
+        menu = st.tabs([
+            '현재 주가', '내 포트폴리오', '주식 매수', '주식 매도', '어제 뉴스 해설'
+        ])
 
         with menu[0]:
             st.subheader("📈 현재 주가 및 기업 정보")
@@ -949,6 +949,8 @@ def main():
                 with col_confirm:
                     if st.button("✅ 매수 확인", use_container_width=True, key='buy_confirm_button'):
                         buy_stock(selected_stock_buy, quantity_buy, selected_sector_buy)
+                        # 주식 매수 후 session 데이터를 DB에 저장합니다.
+                        save_session_data()
 
                 with col_cancel:
                     if st.button("❌ 매수 취소", use_container_width=True, key='buy_cancel_button', type='secondary'):
@@ -987,6 +989,8 @@ def main():
                     with col_confirm:
                         if st.button("✅ 매도 확인", use_container_width=True, key='sell_confirm_button'):
                             sell_stock(selected_stock_sell, quantity_sell)
+                            # 주식 매도 후 session 데이터를 DB에 저장합니다.
+                            save_session_data()
                     with col_cancel:
                         if st.button("❌ 매도 취소", use_container_width=True, key='sell_cancel_button', type='secondary'):
                             st.session_state['sell_confirm'] = False
@@ -1106,6 +1110,11 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")    # .env 파일에서 Supabase AP
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def login_sidebar():
+    # 이미 로그인 되어 있다면, 로그인 버튼을 비활성화합니다.
+    if 'user_settings' in st.session_state:
+        st.sidebar.success("이미 로그인 되어 있습니다.")
+        st.sidebar.button("로그인", disabled=True)
+        return
     # 사이드바에 로그인 폼을 생성하는 함수입니다.
     st.sidebar.header("로그인")
     account = st.sidebar.text_input("계정", value="")  # 사용자에게 계정을 입력받습니다.
@@ -1129,8 +1138,29 @@ def login_sidebar():
                 user_settings = {"default_setting": True}
             st.sidebar.success("로그인 성공!")
             st.session_state["user_settings"] = user_settings
+            # 사용자 id를 세션에 저장합니다.
+            st.session_state["user_id"] = user_data["id"]
         else:
             st.sidebar.error("아이디 또는 비밀번호가 일치하지 않습니다.")
+
+# 새로 추가할 함수: session_state의 데이터를 JSON형식으로 저장하는 함수입니다.
+def save_session_data():
+    # 사용자 id가 존재할 때에만 데이터 저장을 시도합니다.
+    if "user_id" not in st.session_state:
+        return
+    # 저장할 session key 목록
+    keys = ["stocks", "previous_daily_news", "news_meanings", "day_count", "portfolio", "daily_news"]
+    data_to_save = { key: st.session_state.get(key) for key in keys }
+    try:
+        json_data = json.dumps(data_to_save)
+    except Exception as e:
+        st.error("세션 데이터를 JSON으로 변환 실패했습니다: " + str(e))
+        return
+    response = supabase.table("users").update({"data": json_data}).eq("id", st.session_state["user_id"]).execute()
+    if response.error:
+        st.error("세션 데이터 저장 실패: " + str(response.error))
+    else:
+        st.info("세션 데이터를 데이터베이스에 저장했습니다.")
 
 # main 함수 전에 sidebar 로그인을 호출합니다.
 login_sidebar()
