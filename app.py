@@ -1138,8 +1138,8 @@ def login_sidebar():
                 user_settings = {"default_setting": True}
             st.sidebar.success("로그인 성공!")
             st.session_state["user_settings"] = user_settings
-            # 사용자 id를 세션에 저장합니다.
-            st.session_state["user_id"] = user_data["id"]
+            # 사용자 id를 세션에 저장합니다. 'id' 또는 'user_id' 키 대신 'account' 필드를 사용합니다.
+            st.session_state["user_id"] = account
         else:
             st.sidebar.error("아이디 또는 비밀번호가 일치하지 않습니다.")
 
