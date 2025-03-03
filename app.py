@@ -1156,7 +1156,7 @@ def save_session_data():
     except Exception as e:
         st.error("세션 데이터를 JSON으로 변환 실패했습니다: " + str(e))
         return
-    response = supabase.table("users").update({"data": json_data}).eq("id", st.session_state["user_id"]).execute()
+    response = supabase.table("users").update({"data": json_data}).eq("account", st.session_state["user_id"]).execute()
     if response.error:
         st.error("세션 데이터 저장 실패: " + str(response.error))
     else:
