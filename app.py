@@ -1325,8 +1325,5 @@ if __name__ == '__main__':
         initialize_session_state()
         st.session_state['initialized'] = True
     
-    # 로그인 상태 확인
-    if 'account' in st.session_state:
-        main()  # 로그인 되어 있으면 메인 페이지 표시
-    else:
-        login_page()  # 로그인 안 되어 있으면 로그인 페이지 표시
+    # 항상 메인 페이지 표시 (로그인 페이지를 제거함)
+    main()  # 로그인 여부와 상관없이 메인 페이지를 표시
