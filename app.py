@@ -1130,6 +1130,10 @@ def login_sidebar():
             if "data" in user_data and user_data["data"]:
                 try:
                     user_settings = json.loads(user_data["data"])
+                    # 저장된 데이터를 session_state에 복원
+                    for key in ["stocks", "previous_daily_news", "news_meanings", "day_count", "portfolio", "daily_news"]:
+                        if key in user_settings:
+                            st.session_state[key] = user_settings[key]
                 except Exception as e:
                     st.sidebar.error("데이터 JSON 파싱 중 오류 발생, 기본 설정을 사용합니다.")
                     user_settings = {"default_setting": True}  # 기본 설정 예시
