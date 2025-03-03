@@ -1156,12 +1156,15 @@ def save_session_data():
     except Exception as e:
         st.error("세션 데이터를 JSON으로 변환 실패했습니다: " + str(e))
         return
-    response = supabase.table("users").update({"data": json_data}).eq("account", st.session_state["user_id"]).execute()
-    if response.error:
-        st.error("세션 데이터 업데이트 실패했습니다: " + str(response.error))
-        return
-    else:
+    try:
+        response = supabase.table("users").update({"data": json_data}).eq("account", st.session_state["user_id"]).execute()
+        if not response.data:
+            st.error("세션 데이터 업데이트 실패했습니다.")
+            return
         st.info("세션 데이터를 데이터베이스에 저장했습니다.")
+    except Exception as e:
+        st.error(f"세션 데이터 업데이트 중 오류가 발생했습니다: {str(e)}")
+        return
 
 # main 함수 전에 sidebar 로그인을 호출합니다.
 login_sidebar()
