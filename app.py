@@ -921,10 +921,6 @@ def initialize_session_state():
 
 # --- 메인 화면 ---
 def main():
-    # 로그인 확인
-    if 'account' not in st.session_state:
-        login_page()
-        return
     
     # 여기서부터 메인 페이지 내용
     st.title('📈 초등학생을 위한 모의 주식 게임')
@@ -932,8 +928,6 @@ def main():
     if st.session_state.get('main_has_run', False):
         return
     st.session_state['main_has_run'] = True
-    update_user_data()
-    cleanup_reserved_keys()
     print('main: after update and cleanup, st.session_state =', st.session_state)
     col_news, col_main_ui = st.columns([1, 2])
 
@@ -944,7 +938,7 @@ def main():
                 current_daily_news = generate_news()
                 st.session_state["daily_news"] = current_daily_news
             # 뉴스 생성이 완료되면 session_state 저장
-            save_session_state()
+
 
         if st.session_state["daily_news"]:
             st.subheader(f"Day {st.session_state['day_count']} 뉴스")
@@ -1171,7 +1165,7 @@ def main():
 def process_db_update(update_action):
     try:
         update_action()
-        save_session_state()
+
         st.experimental_rerun()
     except Exception as e:
         st.error(f"업데이트 중 오류 발생: {e}")
